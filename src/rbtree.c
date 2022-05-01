@@ -62,7 +62,85 @@ void delete_rbtree(rbtree *t) {
 
 node_t *rbtree_insert(rbtree *t, const key_t key) {
   // TODO: implement insert
-  return t->root;
+  node_t *z = malloc(sizeof(node_t)); // 노드를 삽입하기 위한 노드 생성 및 메모리 할당
+  node_t *x = t->root;
+  node_t *y = t->nil;
+  z->key = key; // 삽입할 노드에 key값 저장
+
+  while (x != t->nil){
+    y = x;
+    if (z->key < x->key){
+      x = x->left;
+    }
+    else{
+      x = x->right;
+    }
+  }
+  z->parent = y;
+  if (y == t->nil){
+    t->root = z;
+  }
+  else if (z->key < y->key){
+    y->left = z;
+  }
+  else {
+    y->right = z;
+  }
+
+  z->left = t->nil;
+  z->right = t->nil;
+  z->color = RBTREE_RED;
+  RB_INSERT_FIXUP(t, z);
+  return z;
+}
+
+void RB_INSERT_FIXUP(rbtree *t, node_t *z){
+  node_t *tmp = malloc(sizeof(node_t));
+  // 부모가 black이라면 반복문을 거치지 않고, root를 black으로 변경 후 함수 종료
+  while (z->parent->color == RBTREE_RED){
+    if (z->parent == z->parent->parent->left){
+      tmp = z->parent->parent->right;
+
+      // case 1
+      // z, parent, uncle(tmp)가 모두 red일 경우
+      if (tmp->color == RBTREE_RED){
+        z->parent->color = RBTREE_BLACK;
+        tmp->color = RBTREE_BLACK;
+        z->parent->parent->color = RBTREE_RED;
+        // 조부모를 새로운 z로 두고 while 루프를 돌면서 색을 바꿔줌.
+        z = z->parent->parent;
+      }
+      // case 2
+      else if (z == z->parent->right){
+        z = z->parent;
+        left_rotate(t, z);
+      }
+      // case 3
+      z->parent->color = RBTREE_BLACK;
+      z->parent->parent->color = RBTREE_RED;
+      right_rotate(t,z->parent->parent);
+    }
+    else{
+      tmp = z->parent->parent->left;
+      // case 1
+      if (tmp->color == RBTREE_RED){
+        z->parent->color = RBTREE_BLACK;
+        tmp->color = RBTREE_BLACK;
+        z->parent->parent->color = RBTREE_RED;
+        z = z->parent->parent;
+      }
+      // case 2
+      else if (z == z->parent->left){
+        z = z->parent;
+        right_rotate(t, z);
+      }
+      // case 3
+      z->parent->color = RBTREE_BLACK;
+      z->parent->parent->color = RBTREE_RED;
+      left_rotate(t,z->parent->parent);
+    }
+  }
+  t->root->color = RBTREE_BLACK;
 }
 
 node_t *rbtree_find(const rbtree *t, const key_t key) {
